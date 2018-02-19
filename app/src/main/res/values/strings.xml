@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ACM</string>
+    <string name="logo_text_info">logo_text_info</string>
+    <string name="image_logo">image_logo</string>
+    <string name="textview"> GPS Status </string>
+    <string name="preferences">preferences</string>
+</resources>
