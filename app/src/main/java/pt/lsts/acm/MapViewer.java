@@ -4,6 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,7 +18,10 @@ import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,7 +33,7 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
+public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener {
 
     MapView map = null;
     ShowError showError = new ShowError();
@@ -40,6 +47,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private boolean firstLockDisplay = true;
     private TextView textGpsLoc;
     private boolean flagControlColorGps = false;
+    private ImageView compassImage;
+    private float currentDegree = 0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +65,23 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_map_viewer);
 
+        compassImage = findViewById(R.id.compass);
+
+        try {
+            SensorManager mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+            assert mSensorManager != null;
+            mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_GAME);
+        }catch(Exception ioCompass){
+            showError.showErrorPopUp("No compass", false, this);
+            compassImage.setVisibility(View.INVISIBLE);
+        }
+
         textGpsLoc = findViewById(R.id.textViewGpsLoc);
         ImageButton preferences = findViewById(R.id.imageButtonPref);
         preferences.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                showError.showInfoToast("Preferences!", mContext);
+                showError.showInfoToast("Preferences!", mContext, false);
                 Preferences();
             }
         });
@@ -102,7 +122,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             customHandler.postDelayed(this, 1100);
             if(gpsLoc.HasNewPos()){
                 updateMapLoc(gpsLoc.GetLocation());
-                textGpsLoc.setText(" GPS Lock ");
+                if( gpsLoc.LocationProviderByGPS())
+                    textGpsLoc.setText(" GPS Lock ");
+                else
+                    textGpsLoc.setText(" GPRS Lock ");
                 if(flagControlColorGps) {
                     textGpsLoc.setTextColor(Color.GREEN);
                     flagControlColorGps = false;
@@ -113,7 +136,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 }
             }
             else{
-                textGpsLoc.setText(" GPS Not Lock ");
+                if( gpsLoc.LocationProviderByGPS())
+                    textGpsLoc.setText(" GPS Not Lock ");
+                else
+                    textGpsLoc.setText(" GPRS Not Lock ");
                 if(flagControlColorGps) {
                     textGpsLoc.setTextColor(Color.rgb(255,0,0));
                     flagControlColorGps = false;
@@ -180,7 +206,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
 
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
-        Toast.makeText(this, "Selected Item: " +menuItem.getTitle(), Toast.LENGTH_SHORT).show();
+        showError.showInfoToast("Selected Item: " +menuItem.getTitle(), this, false);
         switch (menuItem.getItemId()) {
             case R.id.search_item:
                 // do your code
@@ -203,5 +229,32 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             default:
                 return false;
         }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        // get the angle around the z-axis rotated
+        float degree = Math.round(sensorEvent.values[0]);
+        //Log.i(TAG, "Heading: " + Float.toString(degree) + " degrees : "+sensorEvent.sensor.getName() );
+        // create a rotation animation (reverse turn degree degrees)
+        RotateAnimation ra = new RotateAnimation(
+                currentDegree,
+                -degree,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f);
+
+        // how long the animation will take place
+        ra.setDuration(210);
+        // set the animation after the end of the reservation status
+        ra.setFillAfter(true);
+        // Start the animation
+        compassImage.startAnimation(ra);
+        currentDegree = -degree;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        // not in use
     }
 }

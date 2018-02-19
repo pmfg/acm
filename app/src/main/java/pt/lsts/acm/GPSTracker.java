@@ -18,6 +18,7 @@ public final class GPSTracker{
     private ShowError showError = new ShowError();
     private boolean hasNewPos = false;
     private Location locationGPS;
+    private boolean isGpsLocation = false;
 
     GPSTracker(final Context context) {
         // Acquire a reference to the system Location Manager
@@ -34,11 +35,11 @@ public final class GPSTracker{
             }
 
             public void onProviderEnabled(String provider) {
-                showError.showInfoToast("Gps turned on ", context);
+                showError.showInfoToast("Gps turned on ", context, true);
             }
 
             public void onProviderDisabled(String provider) {
-                showError.showInfoToast("Gps is off, please turn on ", context);
+                showError.showInfoToast("Gps is off, please turn on ", context, true);
             }
         };
 
@@ -49,12 +50,17 @@ public final class GPSTracker{
         if (locationManager != null) {
             //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 1, locationListener);
             try {
-                if (locationManager.getProvider(LocationManager.GPS_PROVIDER) == null)
+                if (locationManager.getProvider(LocationManager.GPS_PROVIDER) == null) {
                     locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
-                else
+                    isGpsLocation = false;
+                }
+                else {
                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
+                    isGpsLocation = true;
+                }
             }catch(Exception gps){
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+                isGpsLocation = false;
             }
         }
     }
@@ -65,6 +71,10 @@ public final class GPSTracker{
             locationGPS = location;
             hasNewPos = true;
         }
+    }
+
+    public boolean LocationProviderByGPS(){
+        return isGpsLocation;
     }
 
     public boolean HasNewPos (){
