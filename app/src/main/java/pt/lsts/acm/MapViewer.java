@@ -38,17 +38,26 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     MapView map = null;
     ShowError showError = new ShowError();
     GPSTracker gpsLoc;
+    RipplesPosition ripples;
     private Context mContext;
     private boolean firstBack = true;
     private Handler customHandler;
     private GeoPoint startPoint;
     private Marker startMarker;
+    private Marker startMarkerRipples[];
     private IMapController mapController;
     private boolean firstLockDisplay = true;
     private TextView textGpsLoc;
     private boolean flagControlColorGps = false;
     private ImageView compassImage;
     private float currentDegree = 0f;
+    private String UrlRipples = "http://ripples.lsts.pt/api/v1/systems/active";
+    private boolean newRipplesData = false;
+    private RipplesPosition.SystemInfo systemInfo;
+    private RipplesPosition.SystemInfo backSystemInfo;
+    private GeoPoint systemPosRipples;
+    private boolean haveGpsLoc = false;
+    private boolean firstRunRipplesPull = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +95,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             }
         });
         gpsLoc = new GPSTracker(this);
+        ripples = new RipplesPosition(this, UrlRipples);
+        systemPosRipples = new GeoPoint(0,0);
 
         map = findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
@@ -101,7 +112,12 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         mapController.setCenter(startPoint);
         customHandler = new android.os.Handler();
         customHandler.postDelayed(updateTimerThread, 100);
+        Handler customHandlerRipples = new Handler();
+        customHandlerRipples.postDelayed(updateTimerThreadRipples, 100);
         startMarker = new Marker(map);
+        startMarkerRipples = new Marker[2048];
+        for(int i = 0; i < 2048; i++)
+            startMarkerRipples[i] = new Marker(map);
     }
 
     public void Preferences() {
@@ -121,7 +137,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         public void run() {
             customHandler.postDelayed(this, 1100);
             if(gpsLoc.HasNewPos()){
-                updateMapLoc(gpsLoc.GetLocation());
+                haveGpsLoc = true;
+                //updateMapLoc(gpsLoc.GetLocation());
                 if( gpsLoc.LocationProviderByGPS())
                     textGpsLoc.setText(" GPS Lock ");
                 else
@@ -149,26 +166,89 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                     textGpsLoc.setTextColor(Color.rgb(130,18,18));
                 }
             }
+            updateMapLoc();
         }
     };
 
-    private void updateMapLoc(Location location) {
-        if(firstLockDisplay) {
-            mapController.setZoom(18);
-            GeoPoint center_pos = new GeoPoint(location.getLatitude(), location.getLongitude());
-            startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-            map.getController().animateTo(center_pos);
-            firstLockDisplay = false;
+    //Run task periodically - Ripples
+    private Runnable updateTimerThreadRipples = new Runnable() {
+        @SuppressLint("SetTextI18n")
+        public void run() {
+            customHandler.postDelayed(this, 10000);
+            if(ripples.PullData()){
+                systemInfo = ripples.GetSystemInfoRipples();
+                showError.showInfoToast("New Pull Ripples: "+systemInfo.systemSize, mContext, false);
+                //ripples.ResetBuffer();
+                newRipplesData = true;
+            }
         }
-        //map.removeAllViewsInLayout();
-        startPoint.setLatitude(location.getLatitude());
-        startPoint.setLongitude(location.getLongitude());
-        startMarker.setPosition(startPoint);
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        startMarker.setIcon(getResources().getDrawable(R.drawable.ico_unknown));
-        startMarker.setTitle("My position\nLat: "+location.getLatitude()+"\nLon: "+location.getLongitude());
+    };
+
+    private void updateMapLoc() {
         map.getOverlays().clear();
-        map.getOverlays().add(startMarker);
+        //GPS
+        if(haveGpsLoc) {
+            haveGpsLoc = false;
+            Location location = gpsLoc.GetLocation();
+            if (firstLockDisplay) {
+                mapController.setZoom(18);
+                GeoPoint center_pos = new GeoPoint(location.getLatitude(), location.getLongitude());
+                startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+                map.getController().animateTo(center_pos);
+                firstLockDisplay = false;
+            }
+            //map.removeAllViewsInLayout();
+            startPoint.setLatitude(location.getLatitude());
+            startPoint.setLongitude(location.getLongitude());
+            startMarker.setPosition(startPoint);
+            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            startMarker.setIcon(getResources().getDrawable(R.drawable.ico_unknown));
+            startMarker.setTitle("My position\nLat: " + location.getLatitude() + "\nLon: " + location.getLongitude());
+            map.getOverlays().add(startMarker);
+        }
+
+        //RIPPLES
+        if(newRipplesData){
+            newRipplesData = false;
+            firstRunRipplesPull = false;
+            backSystemInfo = systemInfo;
+            for(int i = 0; i < systemInfo.systemSize; i++){
+                systemPosRipples.setCoords(systemInfo.coordinates[i].getLatitude(), systemInfo.coordinates[i].getLongitude());
+                startMarkerRipples[i].setPosition(systemPosRipples);
+                startMarkerRipples[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                if(systemInfo.sysName[i].contains("lauv"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_auv));
+                else if(systemInfo.sysName[i].contains("ccu"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_ccu));
+                else if(systemInfo.sysName[i].contains("manta"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_manta));
+                else
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
+
+                startMarkerRipples[i].setTitle(systemInfo.sysName[i]+"\n"+systemInfo.update_at[i]+"\n"+
+                "lat: "+systemInfo.coordinates[i].getLatitude()+"\nLon: "+systemInfo.coordinates[i].getLongitude());
+                map.getOverlays().add(startMarkerRipples[i]);
+            }
+        }
+        else if(!newRipplesData && !firstRunRipplesPull){
+            for(int i = 0; i < backSystemInfo.systemSize; i++){
+                systemPosRipples.setCoords(backSystemInfo.coordinates[i].getLatitude(), backSystemInfo.coordinates[i].getLongitude());
+                startMarkerRipples[i].setPosition(systemPosRipples);
+                startMarkerRipples[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                if(backSystemInfo.sysName[i].contains("lauv"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_auv));
+                else if(backSystemInfo.sysName[i].contains("ccu"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_ccu));
+                else if(backSystemInfo.sysName[i].contains("manta"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_manta));
+                else
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
+
+                startMarkerRipples[i].setTitle(backSystemInfo.sysName[i]+"\n"+backSystemInfo.update_at[i]+"\n"+
+                        "lat: "+backSystemInfo.coordinates[i].getLatitude()+"\nLon: "+backSystemInfo.coordinates[i].getLongitude());
+                map.getOverlays().add(startMarkerRipples[i]);
+            }
+        }
         map.invalidate();
     }
 
