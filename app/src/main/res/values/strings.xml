@@ -4,4 +4,10 @@
     <string name="image_logo">image_logo</string>
     <string name="textview"> GPS Status </string>
     <string name="preferences">preferences</string>
+    <string name="exit">Exit</string>
+    <string name="soi_plans_info">SOI Plans Info</string>
+    <string name="log_of_system">Log of system</string>
+    <string name="info_of_ripples">Info of Ripples</string>
+    <string name="info_soi">Info SOI</string>
+    <string name="sys_name">Sys Name</string>
 </resources>

@@ -38,7 +38,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
-            android:name="pt.lsts.acm.MainACM"
+            android:name=".MainACM"
             android:label="ACM"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -48,10 +48,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="pt.lsts.acm.MapViewer"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
-            android:screenOrientation="portrait">
-        </activity>
-
+            android:name=".MapViewer"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"></activity>
+        <activity android:name=".SOIActivity"></activity>
     </application>
+
 </manifest>

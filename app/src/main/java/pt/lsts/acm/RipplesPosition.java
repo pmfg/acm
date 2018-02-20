@@ -27,6 +27,7 @@ class RipplesPosition {
         String[] created_at = new String[32000];
         String[] last_update = new String[32000];
         Location[] coordinates = new Location[32000];
+        Long[] lastUpInSec = new Long[32000];
         int systemSize;
     }
 
@@ -61,7 +62,7 @@ class RipplesPosition {
                     systemInfo.imcid[i] = jsonobject.getString("imcid");
                     systemInfo.sysName[i] = jsonobject.getString("name");
                     systemInfo.update_at[i] = jsonobject.getString("updated_at");
-                    systemInfo.last_update[i] = parseTime(systemInfo.update_at[i]);
+                    systemInfo.last_update[i] = parseTime(systemInfo.update_at[i], i);
                     systemInfo.created_at[i] = jsonobject.getString("created_at");
                     String[] separatedLocText = jsonobject.getString("coordinates").replace("[", "").replace("]", "").split(",");
                     systemInfo.coordinates[i] = new Location("Ripples:"+systemInfo.sysName[i]);
@@ -80,7 +81,7 @@ class RipplesPosition {
     }
 
     @SuppressLint("DefaultLocale")
-    private String parseTime(String s) {
+    private String parseTime(String s, int id) {
         Date today = Calendar.getInstance().getTime();
         @SuppressLint("SimpleDateFormat") SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String currentDateTimeString = formatter.format(today);
@@ -90,9 +91,10 @@ class RipplesPosition {
         Date ripplesTime;
         Date androidTime;
         try {
-            ripplesTime = formatter.parse(currentDateTimeString);
-            androidTime = formatter.parse(ripp[0]);
+            ripplesTime = formatter.parse(ripp[0]);
+            androidTime = formatter.parse(currentDateTimeString);
             long diffSeconds = Math.abs(androidTime.getTime() - ripplesTime.getTime()) / 1000;
+            systemInfo.lastUpInSec[id] = diffSeconds + (timeZone * 60 * 60);
             return "Last Up: " + String.format("%02dh %02dm %02ds", (diffSeconds/3600) + timeZone, (diffSeconds % 3600) / 60, diffSeconds % 60);
         } catch (ParseException e) {
             e.printStackTrace();

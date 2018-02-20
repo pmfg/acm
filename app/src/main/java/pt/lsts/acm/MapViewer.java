@@ -2,6 +2,7 @@ package pt.lsts.acm;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -89,7 +90,6 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         preferences.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                showError.showInfoToast("Preferences!", mContext, false);
                 Preferences();
             }
         });
@@ -108,7 +108,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         map.setClickable(true);
         map.setHapticFeedbackEnabled(true);
         mapController = map.getController();
-        mapController.setZoom(7);
+        mapController.setZoom(8);
         startPoint = new GeoPoint(41.178035883, -8.59593006);
         map.getController().animateTo(startPoint);
         mapController.setCenter(startPoint);
@@ -123,11 +123,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     }
 
     public void Preferences() {
-        //Toast.makeText(this, "Long Press", Toast.LENGTH_SHORT).show();
         View v = new View(mContext);
         v.setBottom(150);
         v.setScrollContainer(true);
-        PopupMenu popup = new PopupMenu(mContext, v, Gravity.CENTER);
+        PopupMenu popup = new PopupMenu(mContext, v, Gravity.CENTER | Gravity.CENTER_HORIZONTAL);
         popup.setOnMenuItemClickListener(MapViewer.this);
         popup.inflate(R.menu.popup_menu_map);
         popup.show();
@@ -280,24 +279,17 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         showError.showInfoToast("Selected Item: " +menuItem.getTitle(), this, false);
+        firstBack = true;
         switch (menuItem.getItemId()) {
-            case R.id.search_item:
-                // do your code
+            case R.id.soi_item:
+                Intent intent = new Intent(mContext, SOIActivity.class);
+                startActivity(intent);
                 return true;
-            case R.id.upload_item:
-                // do your code
-                return true;
-            case R.id.copy_item:
-                // do your code
-                return true;
-            case R.id.print_item:
-                // do your code
-                return true;
-            case R.id.share_item:
-                // do your code
-                return true;
-            case R.id.bookmark_item:
-                // do your code
+            case R.id.exit_item:
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                Toast.makeText(this, "Done", Toast.LENGTH_SHORT).show();
+                this.finish();
+                System.exit(0);
                 return true;
             default:
                 return false;
