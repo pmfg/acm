@@ -75,7 +75,6 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         setContentView(R.layout.activity_map_viewer);
 
         compassImage = findViewById(R.id.compass);
-
         try {
             SensorManager mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
             assert mSensorManager != null;
@@ -97,7 +96,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         gpsLoc = new GPSTracker(this);
         ripples = new RipplesPosition(this, UrlRipples);
         systemPosRipples = new GeoPoint(0,0);
+        SetMapOsmdroid();
+    }
 
+    private void SetMapOsmdroid() {
         map = findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setBuiltInZoomControls(true);
@@ -135,7 +137,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Runnable updateTimerThread = new Runnable() {
         @SuppressLint("SetTextI18n")
         public void run() {
-            customHandler.postDelayed(this, 1100);
+            customHandler.postDelayed(this, 1200);
             if(gpsLoc.HasNewPos()){
                 haveGpsLoc = true;
                 //updateMapLoc(gpsLoc.GetLocation());
@@ -178,7 +180,6 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             if(ripples.PullData()){
                 systemInfo = ripples.GetSystemInfoRipples();
                 showError.showInfoToast("New Pull Ripples: "+systemInfo.systemSize, mContext, false);
-                //ripples.ResetBuffer();
                 newRipplesData = true;
             }
         }
@@ -190,19 +191,11 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         if(haveGpsLoc) {
             haveGpsLoc = false;
             Location location = gpsLoc.GetLocation();
-            if (firstLockDisplay) {
-                mapController.setZoom(18);
-                GeoPoint center_pos = new GeoPoint(location.getLatitude(), location.getLongitude());
-                startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-                map.getController().animateTo(center_pos);
-                firstLockDisplay = false;
-            }
-            //map.removeAllViewsInLayout();
             startPoint.setLatitude(location.getLatitude());
             startPoint.setLongitude(location.getLongitude());
             startMarker.setPosition(startPoint);
             startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            startMarker.setIcon(getResources().getDrawable(R.drawable.ico_unknown));
+            startMarker.setIcon(getResources().getDrawable(R.drawable.ico_my_pos));
             startMarker.setTitle("My position\nLat: " + location.getLatitude() + "\nLon: " + location.getLongitude());
             map.getOverlays().add(startMarker);
         }
@@ -225,7 +218,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 else
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 
-                startMarkerRipples[i].setTitle(systemInfo.sysName[i]+"\n"+systemInfo.update_at[i]+"\n"+
+                startMarkerRipples[i].setTitle(systemInfo.sysName[i]+"\n"+systemInfo.last_update[i]+"\n"+
                 "lat: "+systemInfo.coordinates[i].getLatitude()+"\nLon: "+systemInfo.coordinates[i].getLongitude());
                 map.getOverlays().add(startMarkerRipples[i]);
             }
@@ -244,7 +237,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 else
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 
-                startMarkerRipples[i].setTitle(backSystemInfo.sysName[i]+"\n"+backSystemInfo.update_at[i]+"\n"+
+                startMarkerRipples[i].setTitle(backSystemInfo.sysName[i]+"\n"+backSystemInfo.last_update[i]+"\n"+
                         "lat: "+backSystemInfo.coordinates[i].getLatitude()+"\nLon: "+backSystemInfo.coordinates[i].getLongitude());
                 map.getOverlays().add(startMarkerRipples[i]);
             }

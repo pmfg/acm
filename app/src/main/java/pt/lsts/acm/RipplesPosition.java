@@ -1,11 +1,17 @@
 package pt.lsts.acm;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by pedro on 2/19/18.
@@ -19,8 +25,8 @@ class RipplesPosition {
         String[] sysName = new String[32000];
         String[] update_at = new String[32000];
         String[] created_at = new String[32000];
+        String[] last_update = new String[32000];
         Location[] coordinates = new Location[32000];
-        Double[] lonCoord = new Double[32000];
         int systemSize;
     }
 
@@ -36,9 +42,7 @@ class RipplesPosition {
     }
 
     Boolean PullData() {
-        //String dataPull = "none";
         try {
-            //dataPull = new RetrieveDataRipples().execute(UrlPath).get();
             return ParseDataRipples(new RetrieveDataRipples().execute(UrlPath).get());
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -52,17 +56,14 @@ class RipplesPosition {
             try {
                 array = new JSONArray(dataPull);
                 systemInfo.systemSize = array.length();
-                //showError.showErrorLogcat("MEU", "SIZE: " + sizeSystemInPullRipples);
                 for (int i = 0; i < systemInfo.systemSize; i++) {
                     JSONObject jsonobject = array.getJSONObject(i);
                     systemInfo.imcid[i] = jsonobject.getString("imcid");
                     systemInfo.sysName[i] = jsonobject.getString("name");
                     systemInfo.update_at[i] = jsonobject.getString("updated_at");
-                    //showError.showErrorLogcat("MEU",systemInfo.update_at[i]);
+                    systemInfo.last_update[i] = parseTime(systemInfo.update_at[i]);
                     systemInfo.created_at[i] = jsonobject.getString("created_at");
-                    String[] separatedLocText = jsonobject.getString("coordinates").replace("[", "").replace("]", "")
-                            .split(",");
-                    //showError.showErrorLogcat("MEU", "LAT: "+separatedLocText[0]+ " - LON: "+separatedLocText[1]);
+                    String[] separatedLocText = jsonobject.getString("coordinates").replace("[", "").replace("]", "").split(",");
                     systemInfo.coordinates[i] = new Location("Ripples:"+systemInfo.sysName[i]);
                     systemInfo.coordinates[i].setLatitude(Double.parseDouble(separatedLocText[0]));
                     systemInfo.coordinates[i].setLongitude(Double.parseDouble(separatedLocText[1]));
@@ -76,6 +77,28 @@ class RipplesPosition {
             return true;
         }
         return false;
+    }
+
+    @SuppressLint("DefaultLocale")
+    private String parseTime(String s) {
+        Date today = Calendar.getInstance().getTime();
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String currentDateTimeString = formatter.format(today);
+        String ripp[] = s.replace("T", " ").split("\\+");
+        int timeZone = Integer.parseInt(ripp[1]);
+
+        Date ripplesTime;
+        Date androidTime;
+        try {
+            ripplesTime = formatter.parse(currentDateTimeString);
+            androidTime = formatter.parse(ripp[0]);
+            long diffSeconds = Math.abs(androidTime.getTime() - ripplesTime.getTime()) / 1000;
+            return "Last Up: " + String.format("%02dh %02dm %02ds", (diffSeconds/3600) + timeZone, (diffSeconds % 3600) / 60, diffSeconds % 60);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return "null";
+        }
+
     }
 
     public int GetNumberSystemRipples(){
