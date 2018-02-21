@@ -60,6 +60,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private GeoPoint systemPosRipples;
     private boolean haveGpsLoc = false;
     private boolean firstRunRipplesPull = true;
+    private int timeoutRipplesPull = 10;
+    SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +77,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_map_viewer);
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
         compassImage = findViewById(R.id.compass);
         try {
@@ -178,20 +182,23 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Runnable updateTimerThreadRipples = new Runnable() {
         @SuppressLint("SetTextI18n")
         public void run() {
-            customHandler.postDelayed(this, 10000);
-            if(ripples.PullData()){
-                systemInfo = ripples.GetSystemInfoRipples();
-                showError.showInfoToast("New Pull Ripples: "+systemInfo.systemSize, mContext, false);
-                newRipplesData = true;
+            customHandler.postDelayed(this, timeoutRipplesPull * 1000);
+            if(timeoutRipplesPull != 1) {
+                if (ripples.PullData()) {
+                    systemInfo = ripples.GetSystemInfoRipples();
+                    showError.showInfoToast("New Pull Ripples: " + systemInfo.systemSize, mContext, false);
+                    newRipplesData = true;
+                }
             }
+            timeoutRipplesPull = Integer.parseInt(prefs.getString("sync_frequency_ripples", "12"));
         }
     };
     //Run task periodically - garbage collection
     private Runnable updateTimerThreadGarbagde = new Runnable() {
         public void run() {
             customHandler.postDelayed(this, 10000);
-                System.gc();
-                Runtime.getRuntime().gc();
+            System.gc();
+            Runtime.getRuntime().gc();
         }
     };
 
@@ -296,6 +303,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             case R.id.soi_item:
                 Intent intent = new Intent(mContext, SOIActivity.class);
                 startActivity(intent);
+                return true;
+            case R.id.settings_item:
+                Intent intentSettings = new Intent(mContext, SettingsActivity.class);
+                startActivity(intentSettings);
                 return true;
             case R.id.exit_item:
                 getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

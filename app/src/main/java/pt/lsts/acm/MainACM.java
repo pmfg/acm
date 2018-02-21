@@ -97,7 +97,6 @@ public class MainACM extends AppCompatActivity {
 
     private void checkConnections(){
         if (isWifiAvailable() || isNetworkAvailable()) {
-            Toast.makeText(this, "ready to start", Toast.LENGTH_SHORT).show();
             new CountDownTimer(5000, 1000) {
                 public void onFinish() {
                     // When timer is finished
