@@ -3,12 +3,17 @@ package pt.lsts.acm;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,18 +30,18 @@ import java.util.concurrent.ExecutionException;
 public class SOIActivity extends AppCompatActivity {
 
     class SOIInfo {
-        String[] sysName = new String[32000];
-        String[] plan = new String[32000];
-        double[] duration = new double[32000];
-        String[] eta = new String[32000];
-        Location[][] waypoints = new Location[32000][1024];
-        int[] waypointsSize = new int[32000];
+        ArrayList<String> sysName = new ArrayList<>();
+        ArrayList<String> plan = new ArrayList<>();
+        ArrayList<Double> duration = new ArrayList<>();
+        ArrayList<String> eta = new ArrayList<>();
+        Location[][] waypoints = new Location[32000][128];
+        ArrayList<Integer> waypointsSize = new ArrayList<>();
         int SOIInfoSize;
     }
 
     ShowError showError = new ShowError();
     private String UrlRipplesSoi = "http://ripples.lsts.pt/soi";
-    SOIInfo soiInfo = new SOIInfo();
+    private SOIInfo soiInfo;
     SOIListAdapter adapter;
     Context mContext;
 
@@ -45,18 +50,7 @@ public class SOIActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_soi);
         mContext = this;
-
-        ArrayList<SystemDetail> arrayOfSystemDetail = new ArrayList<SystemDetail>();
-        adapter = new SOIListAdapter(this, arrayOfSystemDetail);
-        ListView list = findViewById(R.id.listview);
-        list.setAdapter(adapter);
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                showError.showPopUp("WayPoints:", getWaypoints(i), (Activity) mContext);
-            }
-        });
-
+        soiInfo = new SOIInfo();
         try {
             showError.showErrorLogcat("MEU", ParseDataRipplesSOI(new RetrieveDataRipplesSOI().execute(UrlRipplesSoi).get()));
         } catch (InterruptedException | ExecutionException e) {
@@ -74,47 +68,47 @@ public class SOIActivity extends AppCompatActivity {
             for (int i = 0; i < soiInfo.SOIInfoSize; i++) {
                 JSONObject jsonobject = array.getJSONObject(i);
                 try {
-                    soiInfo.sysName[i] = jsonobject.getString("name");
+                    soiInfo.sysName.add(i, jsonobject.getString("name"));
                 }catch(JSONException io){
-                    soiInfo.sysName[i] = "null";
+                    soiInfo.sysName.add(i, jsonobject.getString("null"));
                 }
 
                 objectIn = jsonobject.getJSONObject("plan");
                 for(int t = 0; t < soiInfo.SOIInfoSize; t++) {
                     try {
-                        soiInfo.plan[i] = objectIn.get("id").toString();
+                        soiInfo.plan.add(i, objectIn.get("id").toString());
                     }catch(JSONException io){
                         io.printStackTrace();
-                        soiInfo.plan[i] = "null";
+                        soiInfo.plan.add(i, "null");
                     }
 
                     try {
                         JSONArray arrayWaypoints = objectIn.getJSONArray("waypoints");
-                        soiInfo.waypointsSize[i] = arrayWaypoints.length();
-                        for(int v = 0; v < soiInfo.waypointsSize[i]; v++){
+                        soiInfo.waypointsSize.add(i, arrayWaypoints.length());
+                        for(int v = 0; v < soiInfo.waypointsSize.get(i); v++){
                             objectWaypoints = arrayWaypoints.getJSONObject(v);
                             try{
                                 double lat = Double.parseDouble(objectWaypoints.getString("latitude"));
                                 double lon = Double.parseDouble(objectWaypoints.getString("longitude"));
-                                soiInfo.waypoints[i][v] = new Location(soiInfo.sysName[i]);
+                                soiInfo.waypoints[i][v] = new Location(soiInfo.sysName.get(i));
                                 soiInfo.waypoints[i][v].setLatitude(lat);
                                 soiInfo.waypoints[i][v].setLongitude(lon);
                             }catch (JSONException io){
-                                soiInfo.waypoints[i][v] = new Location(soiInfo.sysName[i]);
+                                soiInfo.waypoints[i][v] = new Location(soiInfo.sysName.get(i));
                                 soiInfo.waypoints[i][v].setLatitude(0);
                                 soiInfo.waypoints[i][v].setLongitude(0);
                             }
 
                             try {
-                                soiInfo.duration[i] = Double.parseDouble(objectWaypoints.getString("duration"));
+                                soiInfo.duration.add(i, Double.parseDouble(objectWaypoints.getString("duration")));
                             }catch(JSONException io){
-                                soiInfo.duration[i] = 0;
+                                soiInfo.duration.add(i, 0.0);
                             }
 
                             try {
-                                soiInfo.eta[i] = parseTime(objectWaypoints.getString("eta"));
+                                soiInfo.eta.add(i, parseTime(objectWaypoints.getString("eta")));
                             }catch(JSONException io){
-                                soiInfo.eta[i] = "null";
+                                soiInfo.eta.add(i, "null");
                             }
                         }
                     }catch(JSONException io){
@@ -126,11 +120,35 @@ public class SOIActivity extends AppCompatActivity {
             e.printStackTrace();
             return "null";
         }
-        showData();
+        if(soiInfo.SOIInfoSize > 0)
+            showData();
+        else {
+            showError.showPopUp("SOI Plans", "No SOI Plans!!!", (Activity) mContext);
+            new CountDownTimer(4000, 100) {
+                public void onFinish() {
+                    Runtime.getRuntime().gc();
+
+                    finish();
+                }
+                public void onTick(long millisUntilFinished) {
+                }
+            }.start();
+        }
         return "ok";
     }
 
     private void showData() {
+        ArrayList<SystemDetail> arrayOfSystemDetail = new ArrayList<SystemDetail>();
+        adapter = new SOIListAdapter(this, arrayOfSystemDetail);
+        ListView list = findViewById(R.id.listview);
+        list.setAdapter(adapter);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                showError.showPopUp("WayPoints:", getWaypoints(i), (Activity) mContext);
+            }
+        });
+
         for(int i = 0; i < soiInfo.SOIInfoSize; i++){
             /*showError.showErrorLogcat("MEU", "SysName: "+soiInfo.sysName[i]);
             showError.showErrorLogcat("MEU", "Plan SOI: "+soiInfo.plan[i]);
@@ -146,18 +164,18 @@ public class SOIActivity extends AppCompatActivity {
             showError.showErrorLogcat("MEU", "ETA: "+soiInfo.eta[i]);
             showError.showErrorLogcat("MEU", " ");*/
 
-            String firstLine = "plan: "+soiInfo.plan[i] + " | timeOut: " + soiInfo.duration[i] + " sec\nETA: " + soiInfo.eta[i];
+            String firstLine = "plan: "+soiInfo.plan.get(i) + " | timeOut: " + soiInfo.duration.get(i) + " sec\nETA: " + soiInfo.eta.get(i);
             //showError.showErrorLogcat("MEU", firstLine);
 
 
-            SystemDetail data = new SystemDetail(soiInfo.sysName[i], firstLine);
+            SystemDetail data = new SystemDetail(soiInfo.sysName.get(i), firstLine);
             adapter.add(data);
         }
     }
 
     private String getWaypoints(int id){
         String secondLine = "";
-        for(int t = 0; t < soiInfo.waypointsSize[id]; t++){
+        for(int t = 0; t < soiInfo.waypointsSize.get(id); t++){
             showError.showErrorLogcat("MEU", "Point: "+t);
             showError.showErrorLogcat("MEU", "    Lat: "+soiInfo.waypoints[id][t].getLatitude());
             showError.showErrorLogcat("MEU", "    Lon: "+soiInfo.waypoints[id][t].getLongitude());
@@ -172,5 +190,15 @@ public class SOIActivity extends AppCompatActivity {
         @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
         sdf.setTimeZone(TimeZone.getTimeZone("GMT-0"));
         return sdf.format(date);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Runtime.getRuntime().gc();
+            finish();
+            return false;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }

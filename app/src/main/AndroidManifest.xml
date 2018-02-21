@@ -30,16 +30,16 @@
     <uses-feature android:name="android.hardware.wifi" />
 
     <application
-        android:allowBackup="true"
         android:icon="@mipmap/logo_app_acm"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:roundIcon="@mipmap/logo_app_acm_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        android:theme="@style/Theme.AppCompat.Light.Dialog">
         <activity
             android:name=".MainACM"
             android:label="ACM"
+            android:noHistory="true"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,8 +50,12 @@
         <activity
             android:name=".MapViewer"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"></activity>
-        <activity android:name=".SOIActivity"></activity>
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <activity
+            android:screenOrientation="portrait"
+            android:noHistory="true"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:name=".SOIActivity"/>
     </application>
 
 </manifest>

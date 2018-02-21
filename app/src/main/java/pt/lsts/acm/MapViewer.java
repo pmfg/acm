@@ -43,6 +43,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Context mContext;
     private boolean firstBack = true;
     private Handler customHandler;
+    private Handler garbagdeHandler;
     private GeoPoint startPoint;
     private Marker startMarker;
     private Marker startMarkerRipples[];
@@ -114,6 +115,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         mapController.setCenter(startPoint);
         customHandler = new android.os.Handler();
         customHandler.postDelayed(updateTimerThread, 100);
+        garbagdeHandler = new android.os.Handler();
+        garbagdeHandler.postDelayed(updateTimerThreadGarbagde, 100);
         Handler customHandlerRipples = new Handler();
         customHandlerRipples.postDelayed(updateTimerThreadRipples, 100);
         startMarker = new Marker(map);
@@ -183,6 +186,15 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             }
         }
     };
+    //Run task periodically - garbage collection
+    private Runnable updateTimerThreadGarbagde = new Runnable() {
+        public void run() {
+            customHandler.postDelayed(this, 10000);
+                System.gc();
+                Runtime.getRuntime().gc();
+        }
+    };
+
 
     private void updateMapLoc() {
         map.getOverlays().clear();
@@ -278,7 +290,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
 
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
-        showError.showInfoToast("Selected Item: " +menuItem.getTitle(), this, false);
+        //showError.showInfoToast("Selected Item: " +menuItem.getTitle(), this, false);
         firstBack = true;
         switch (menuItem.getItemId()) {
             case R.id.soi_item:
