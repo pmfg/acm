@@ -43,11 +43,9 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Context mContext;
     private boolean firstBack = true;
     private Handler customHandler;
-    private Handler garbagdeHandler;
     private GeoPoint startPoint;
     private Marker startMarker;
     private Marker startMarkerRipples[];
-    private IMapController mapController;
     private boolean firstLockDisplay = true;
     private TextView textGpsLoc;
     private boolean flagControlColorGps = false;
@@ -112,14 +110,14 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         map.setUseDataConnection(true);
         map.setClickable(true);
         map.setHapticFeedbackEnabled(true);
-        mapController = map.getController();
+        IMapController mapController = map.getController();
         mapController.setZoom(8);
         startPoint = new GeoPoint(41.178035883, -8.59593006);
         map.getController().animateTo(startPoint);
         mapController.setCenter(startPoint);
         customHandler = new android.os.Handler();
         customHandler.postDelayed(updateTimerThread, 100);
-        garbagdeHandler = new android.os.Handler();
+        Handler garbagdeHandler = new Handler();
         garbagdeHandler.postDelayed(updateTimerThreadGarbagde, 100);
         Handler customHandlerRipples = new Handler();
         customHandlerRipples.postDelayed(updateTimerThreadRipples, 100);
@@ -184,15 +182,21 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         public void run() {
             customHandler.postDelayed(this, timeoutRipplesPull * 1000);
             if(timeoutRipplesPull != 1) {
-                if (ripples.PullData()) {
+                if (ripples.PullData(UrlRipples)) {
                     systemInfo = ripples.GetSystemInfoRipples();
                     showError.showInfoToast("New Pull Ripples: " + systemInfo.systemSize, mContext, false);
                     newRipplesData = true;
                 }
+                else{
+                    showError.showInfoToast("Error: Pull Ripples!", mContext, false);
+                }
             }
             timeoutRipplesPull = Integer.parseInt(prefs.getString("sync_frequency_ripples", "12"));
+            UrlRipples = prefs.getString("url_ripples", UrlRipples);
+            //showError.showErrorLogcat("MEU", prefs.getString("url_ripples", UrlRipples) + " - "+ UrlRipples);
         }
     };
+
     //Run task periodically - garbage collection
     private Runnable updateTimerThreadGarbagde = new Runnable() {
         public void run() {
@@ -201,7 +205,6 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             Runtime.getRuntime().gc();
         }
     };
-
 
     private void updateMapLoc() {
         map.getOverlays().clear();

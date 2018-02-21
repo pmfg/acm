@@ -12,6 +12,26 @@
         android:positiveButtonText="@null"
         android:title="@string/pref_title_sync_frequency" />
 
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/url_ripples"
+        android:inputType="textCapWords"
+        android:key="url_ripples"
+        android:maxLines="2"
+        android:selectAllOnFocus="true"
+        android:singleLine="false"
+        android:title="Ripples Pull Url" />
+
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/url_soi"
+        android:inputType="textCapWords"
+        android:key="url_soi"
+        android:maxLines="2"
+        android:selectAllOnFocus="true"
+        android:singleLine="false"
+        android:title="SOI Plan Pull Url" />
+
     <!--<ListPreference
         android:defaultValue="60"
         android:entries="@array/pref_sync_frequency_titles_soi"

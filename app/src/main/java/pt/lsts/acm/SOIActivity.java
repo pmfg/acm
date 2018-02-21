@@ -3,26 +3,23 @@ package pt.lsts.acm;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
@@ -44,17 +41,24 @@ public class SOIActivity extends AppCompatActivity {
     private SOIInfo soiInfo;
     SOIListAdapter adapter;
     Context mContext;
+    SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_soi);
         mContext = this;
+        prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         soiInfo = new SOIInfo();
+        String result = "";
         try {
-            showError.showErrorLogcat("MEU", ParseDataRipplesSOI(new RetrieveDataRipplesSOI().execute(UrlRipplesSoi).get()));
+            String urlSoi = prefs.getString("url_soi", UrlRipplesSoi);
+            result = ParseDataRipplesSOI(new RetrieveDataRipplesSOI().execute(urlSoi).get());
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
+        }
+        if(result.equals("null")){
+            showError.showErrorPopUpCloseActivity("No valid data from SOI Url!", (Activity) mContext);
         }
     }
 

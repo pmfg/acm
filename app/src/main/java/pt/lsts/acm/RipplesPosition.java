@@ -42,7 +42,8 @@ class RipplesPosition {
         UrlPath = urlRipples;
     }
 
-    Boolean PullData() {
+    Boolean PullData(String Url) {
+        UrlPath = Url;
         try {
             return ParseDataRipples(new RetrieveDataRipples().execute(UrlPath).get());
         } catch (Exception ex) {

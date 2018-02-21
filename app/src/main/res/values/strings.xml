@@ -13,6 +13,8 @@
     <string name="main_logo">Main logo</string>
     <string name="settings">Settings</string>
     <string name="title_activity_settings">Settings</string>
+    <string name="url_ripples">http://ripples.lsts.pt/api/v1/systems/active</string>
+    <string name="url_soi">http://ripples.lsts.pt/soi</string>
 
     <!-- Strings related to Settings -->
 
