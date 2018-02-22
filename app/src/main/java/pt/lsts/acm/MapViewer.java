@@ -60,6 +60,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private boolean firstRunRipplesPull = true;
     private int timeoutRipplesPull = 10;
     SharedPreferences prefs;
+    Location myLocation;
+    GPSConvert gpsConvert = new GPSConvert();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -211,14 +213,25 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         //GPS
         if(haveGpsLoc) {
             haveGpsLoc = false;
-            Location location = gpsLoc.GetLocation();
-            startPoint.setLatitude(location.getLatitude());
-            startPoint.setLongitude(location.getLongitude());
+            myLocation = gpsLoc.GetLocation();
+            startPoint.setLatitude(myLocation.getLatitude());
+            startPoint.setLongitude(myLocation.getLongitude());
             startMarker.setPosition(startPoint);
             startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             startMarker.setIcon(getResources().getDrawable(R.drawable.ico_my_pos));
-            startMarker.setTitle("My position\nLat: " + location.getLatitude() + "\nLon: " + location.getLongitude());
+            startMarker.setTitle("My position\n" + gpsConvert.latLonToDM(myLocation.getLatitude(), myLocation.getLongitude()));
             map.getOverlays().add(startMarker);
+        }
+        else{
+            if(myLocation != null){
+                startPoint.setLatitude(myLocation.getLatitude());
+                startPoint.setLongitude(myLocation.getLongitude());
+                startMarker.setPosition(startPoint);
+                startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                startMarker.setIcon(getResources().getDrawable(R.drawable.ico_my_pos));
+                startMarker.setTitle("My last position\n" + gpsConvert.latLonToDM(myLocation.getLatitude(), myLocation.getLongitude()));
+                map.getOverlays().add(startMarker);
+            }
         }
 
         //RIPPLES
@@ -240,7 +253,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 
                 startMarkerRipples[i].setTitle(systemInfo.sysName[i]+"\n"+systemInfo.last_update[i]+"\n"+
-                "lat: "+systemInfo.coordinates[i].getLatitude()+"\nLon: "+systemInfo.coordinates[i].getLongitude());
+                        gpsConvert.latLonToDM(systemInfo.coordinates[i].getLatitude(), systemInfo.coordinates[i].getLongitude()));
                 map.getOverlays().add(startMarkerRipples[i]);
             }
         }
@@ -259,7 +272,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 
                 startMarkerRipples[i].setTitle(backSystemInfo.sysName[i]+"\n"+backSystemInfo.last_update[i]+"\n"+
-                        "lat: "+backSystemInfo.coordinates[i].getLatitude()+"\nLon: "+backSystemInfo.coordinates[i].getLongitude());
+                        gpsConvert.latLonToDM(backSystemInfo.coordinates[i].getLatitude(), backSystemInfo.coordinates[i].getLongitude()));
                 map.getOverlays().add(startMarkerRipples[i]);
             }
         }
