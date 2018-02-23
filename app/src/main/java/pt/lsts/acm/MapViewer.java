@@ -33,6 +33,10 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.ScaleBarOverlay;
+
+import java.util.List;
 
 public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener {
 
@@ -62,6 +66,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     SharedPreferences prefs;
     Location myLocation;
     GPSConvert gpsConvert = new GPSConvert();
+    ScaleBarOverlay scaleBarOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,6 +117,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         map.setUseDataConnection(true);
         map.setClickable(true);
         map.setHapticFeedbackEnabled(true);
+
         IMapController mapController = map.getController();
         mapController.setZoom(8);
         startPoint = new GeoPoint(41.178035883, -8.59593006);
@@ -127,6 +133,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         startMarkerRipples = new Marker[2048];
         for(int i = 0; i < 2048; i++)
             startMarkerRipples[i] = new Marker(map);
+
+        scaleBarOverlay = new ScaleBarOverlay(map);
+        List<Overlay> overlays = map.getOverlays();
+        overlays.add(scaleBarOverlay);
     }
 
     public void Preferences() {
@@ -276,7 +286,25 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 map.getOverlays().add(startMarkerRipples[i]);
             }
         }
+
+        drawScaleBar(map);
+
         map.invalidate();
+    }
+
+    private void drawScaleBar(MapView map) {
+        if (scaleBarOverlay != null) {
+            scaleBarOverlay.setAlignRight(true);
+            scaleBarOverlay.setEnableAdjustLength(true);
+            scaleBarOverlay.setScaleBarOffset(10, 90);
+            map.getOverlays().add(scaleBarOverlay);
+        } else {
+            scaleBarOverlay = new ScaleBarOverlay(map);
+            scaleBarOverlay.setAlignRight(true);
+            scaleBarOverlay.setEnableAdjustLength(true);
+            scaleBarOverlay.setScaleBarOffset(10, 90);
+            map.getOverlays().add(scaleBarOverlay);
+        }
     }
 
     public void onResume(){
