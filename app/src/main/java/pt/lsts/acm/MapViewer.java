@@ -50,7 +50,6 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private GeoPoint startPoint;
     private Marker startMarker;
     private Marker startMarkerRipples[];
-    private boolean firstLockDisplay = true;
     private TextView textGpsLoc;
     private boolean flagControlColorGps = false;
     private ImageView compassImage;

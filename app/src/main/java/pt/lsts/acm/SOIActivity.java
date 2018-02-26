@@ -10,6 +10,9 @@ import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -44,12 +47,24 @@ public class SOIActivity extends AppCompatActivity {
     SharedPreferences prefs;
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.soi_bar, menu);
+        return true;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_soi);
         mContext = this;
         prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         soiInfo = new SOIInfo();
+        String result = "";
+        getInfoOfPlanSoi();
+    }
+
+    private void getInfoOfPlanSoi(){
         String result = "";
         try {
             String urlSoi = prefs.getString("url_soi", UrlRipplesSoi);
@@ -131,7 +146,6 @@ public class SOIActivity extends AppCompatActivity {
             new CountDownTimer(4000, 100) {
                 public void onFinish() {
                     Runtime.getRuntime().gc();
-
                     finish();
                 }
                 public void onTick(long millisUntilFinished) {
@@ -178,14 +192,11 @@ public class SOIActivity extends AppCompatActivity {
     }
 
     private String getWaypoints(int id){
-        String secondLine = "";
+        String wayPointsInfo = "";
         for(int t = 0; t < soiInfo.waypointsSize.get(id); t++){
-            showError.showErrorLogcat("MEU", "Point: "+t);
-            showError.showErrorLogcat("MEU", "    Lat: "+soiInfo.waypoints[id][t].getLatitude());
-            showError.showErrorLogcat("MEU", "    Lon: "+soiInfo.waypoints[id][t].getLongitude());
-            secondLine = secondLine + "Lat: "+soiInfo.waypoints[id][t].getLatitude() + " | Lon: "+soiInfo.waypoints[id][t].getLongitude()+"\n";
+            wayPointsInfo = wayPointsInfo + "Lat: "+soiInfo.waypoints[id][t].getLatitude() + " | Lon: "+soiInfo.waypoints[id][t].getLongitude()+"\n";
         }
-        return secondLine;
+        return wayPointsInfo;
     }
 
     private String parseTime(String s) {
@@ -204,5 +215,18 @@ public class SOIActivity extends AppCompatActivity {
             return false;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
+                getInfoOfPlanSoi();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 }
