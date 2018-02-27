@@ -14,7 +14,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import org.json.JSONArray;
@@ -26,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+
+import pl.droidsonroids.gif.GifImageView;
 
 public class SOIActivity extends AppCompatActivity {
 
@@ -45,6 +49,8 @@ public class SOIActivity extends AppCompatActivity {
     SOIListAdapter adapter;
     Context mContext;
     SharedPreferences prefs;
+    ListView list;
+    GifImageView refreshGif;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -57,10 +63,12 @@ public class SOIActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_soi);
+        list = findViewById(R.id.listview);
+        refreshGif = findViewById(R.id.imageViewRefreshGif);
+        refreshGif.setVisibility(View.VISIBLE);
         mContext = this;
         prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         soiInfo = new SOIInfo();
-        String result = "";
         getInfoOfPlanSoi();
     }
 
@@ -158,7 +166,8 @@ public class SOIActivity extends AppCompatActivity {
     private void showData() {
         ArrayList<SystemDetail> arrayOfSystemDetail = new ArrayList<SystemDetail>();
         adapter = new SOIListAdapter(this, arrayOfSystemDetail);
-        ListView list = findViewById(R.id.listview);
+        refreshGif.setVisibility(View.GONE);
+        list.setVisibility(View.VISIBLE);
         list.setAdapter(adapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -221,7 +230,15 @@ public class SOIActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                getInfoOfPlanSoi();
+                list.setVisibility(View.GONE);
+                refreshGif.setVisibility(View.VISIBLE);
+                new CountDownTimer(4000, 100) {
+                    public void onFinish() {
+                        getInfoOfPlanSoi();
+                    }
+                    public void onTick(long millisUntilFinished) {
+                    }
+                }.start();
                 return true;
 
             default:
