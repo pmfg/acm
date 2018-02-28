@@ -254,6 +254,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference("sync_frequency_ripples"));
             bindPreferenceSummaryToValue(findPreference("url_ripples"));
             bindPreferenceSummaryToValue(findPreference("url_soi"));
+            bindPreferenceSummaryToValue(findPreference("sync_frequency_ais"));
         }
 
         @Override

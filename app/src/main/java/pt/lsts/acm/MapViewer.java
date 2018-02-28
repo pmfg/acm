@@ -27,18 +27,22 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.FirebaseApp;
+
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.ScaleBarOverlay;
 
 import java.util.List;
 
-public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener {
+public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener, MapEventsReceiver {
 
     MapView map = null;
     ShowError showError = new ShowError();
@@ -47,6 +51,9 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Context mContext;
     private boolean firstBack = true;
     private Handler customHandler;
+    private Handler customHandlerAIS;
+    private Handler customHandlerGarbagde;
+    private Handler customHandlerRipples;
     private GeoPoint startPoint;
     private Marker startMarker;
     private Marker startMarkerRipples[];
@@ -62,10 +69,13 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private boolean haveGpsLoc = false;
     private boolean firstRunRipplesPull = true;
     private int timeoutRipplesPull = 10;
+    private int timeoutAISPull = 10;
     SharedPreferences prefs;
     Location myLocation;
     GPSConvert gpsConvert = new GPSConvert();
     ScaleBarOverlay scaleBarOverlay;
+    MapEventsOverlay mapEventsOverlay;
+    AISPlot ais;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +91,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_map_viewer);
+
+        ais = new AISPlot(mContext);
 
         prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 
@@ -106,6 +118,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         ripples = new RipplesPosition(this, UrlRipples);
         systemPosRipples = new GeoPoint(0,0);
         SetMapOsmdroid();
+
+        ais.getAISInfo();
     }
 
     private void SetMapOsmdroid() {
@@ -124,10 +138,12 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         mapController.setCenter(startPoint);
         customHandler = new android.os.Handler();
         customHandler.postDelayed(updateTimerThread, 100);
-        Handler garbagdeHandler = new Handler();
-        garbagdeHandler.postDelayed(updateTimerThreadGarbagde, 100);
-        Handler customHandlerRipples = new Handler();
+        customHandlerGarbagde = new Handler();
+        customHandlerGarbagde.postDelayed(updateTimerThreadGarbagde, 100);
+        customHandlerRipples = new Handler();
         customHandlerRipples.postDelayed(updateTimerThreadRipples, 100);
+        customHandlerAIS = new Handler();
+        customHandlerAIS.postDelayed(updateTimerThreadAIS, 2000);
         startMarker = new Marker(map);
         startMarkerRipples = new Marker[2048];
         for(int i = 0; i < 2048; i++)
@@ -136,6 +152,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         scaleBarOverlay = new ScaleBarOverlay(map);
         List<Overlay> overlays = map.getOverlays();
         overlays.add(scaleBarOverlay);
+        mapEventsOverlay = new MapEventsOverlay(this, this);
+        map.getOverlays().add(0, mapEventsOverlay);
     }
 
     public void Preferences() {
@@ -191,7 +209,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private Runnable updateTimerThreadRipples = new Runnable() {
         @SuppressLint("SetTextI18n")
         public void run() {
-            customHandler.postDelayed(this, timeoutRipplesPull * 1000);
+            customHandlerRipples.postDelayed(this, timeoutRipplesPull * 1000);
             if(timeoutRipplesPull != 1) {
                 if (ripples.PullData(UrlRipples)) {
                     systemInfo = ripples.GetSystemInfoRipples();
@@ -208,10 +226,22 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         }
     };
 
+    //Run task periodically - AIS
+    private Runnable updateTimerThreadAIS = new Runnable() {
+        @SuppressLint("SetTextI18n")
+        public void run() {
+            customHandlerAIS.postDelayed(this, timeoutAISPull * 1000);
+            if(timeoutAISPull != 1) {
+                showError.showErrorLogcat("MEU", "size ais: "+ais.GetNumberShipsAIS());
+            }
+            timeoutAISPull = Integer.parseInt(prefs.getString("sync_frequency_ais", "12"));
+        }
+    };
+
     //Run task periodically - garbage collection
     private Runnable updateTimerThreadGarbagde = new Runnable() {
         public void run() {
-            customHandler.postDelayed(this, 10000);
+            customHandlerGarbagde.postDelayed(this, 10000);
             System.gc();
             Runtime.getRuntime().gc();
         }
@@ -287,7 +317,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         }
 
         drawScaleBar(map);
-
+        map.getOverlays().add(0, mapEventsOverlay);
         map.invalidate();
     }
 
@@ -385,7 +415,17 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-        // not in use
+    public void onAccuracyChanged(Sensor sensor, int i) {}
+
+    @Override
+    public boolean singleTapConfirmedHelper(GeoPoint p) {
+        showError.showErrorLogcat("MEU", "tapped");
+        return true;
+    }
+
+    @Override
+    public boolean longPressHelper(GeoPoint p) {
+        showError.showErrorLogcat("MEU", "LONG");
+        return true;
     }
 }

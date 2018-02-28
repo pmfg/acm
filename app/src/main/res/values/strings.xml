@@ -80,6 +80,24 @@
         <item>1</item>
     </string-array>
 
+    <string name="pref_title_sync_frequency_ais">Sync frequency AIS</string>
+    <string-array name="pref_sync_frequency_titles_ais">
+        <item>10 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values_ais">
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+        <item>1</item>
+    </string-array>
+
     <string-array name="list_preference_entries">
         <item>Entry 1</item>
         <item>Entry 2</item>
