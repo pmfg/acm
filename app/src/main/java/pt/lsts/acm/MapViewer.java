@@ -57,6 +57,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private GeoPoint startPoint;
     private Marker startMarker;
     private Marker startMarkerRipples[];
+    private Marker startMarkerAIS[];
     private TextView textGpsLoc;
     private boolean flagControlColorGps = false;
     private ImageView compassImage;
@@ -66,6 +67,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     private RipplesPosition.SystemInfo systemInfo;
     private RipplesPosition.SystemInfo backSystemInfo;
     private GeoPoint systemPosRipples;
+    private GeoPoint systemPosAIS;
     private boolean haveGpsLoc = false;
     private boolean firstRunRipplesPull = true;
     private int timeoutRipplesPull = 10;
@@ -117,6 +119,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         gpsLoc = new GPSTracker(this);
         ripples = new RipplesPosition(this, UrlRipples);
         systemPosRipples = new GeoPoint(0,0);
+        systemPosAIS = new GeoPoint(0,0);;
         SetMapOsmdroid();
 
         ais.getAISInfo();
@@ -148,6 +151,10 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         startMarkerRipples = new Marker[2048];
         for(int i = 0; i < 2048; i++)
             startMarkerRipples[i] = new Marker(map);
+
+        startMarkerAIS = new Marker[32000];
+        for(int i = 0; i < 32000; i++)
+            startMarkerAIS[i] = new Marker(map);
 
         scaleBarOverlay = new ScaleBarOverlay(map);
         List<Overlay> overlays = map.getOverlays();
@@ -313,6 +320,17 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 startMarkerRipples[i].setTitle(backSystemInfo.sysName[i]+"\n"+backSystemInfo.last_update[i]+"\n"+
                         gpsConvert.latLonToDM(backSystemInfo.coordinates[i].getLatitude(), backSystemInfo.coordinates[i].getLongitude()));
                 map.getOverlays().add(startMarkerRipples[i]);
+            }
+        }
+
+        if(ais.GetNumberShipsAIS() > 0) {
+            for (int i = 0; i < ais.GetNumberShipsAIS(); i++) {
+                systemPosAIS.setCoords(ais.getLatitudeShip(i), ais.getLongitudeShip(i));
+                startMarkerAIS[i].setPosition(systemPosAIS);
+                startMarkerAIS[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                startMarkerAIS[i].setIcon(getResources().getDrawable(R.drawable.ship_icon));
+                startMarkerAIS[i].setTitle(ais.getNameShipId(i) + "\nLat: "+ais.getLatitudeShip(i)+ " Lon: "+ ais.getLongitudeShip(i));
+                map.getOverlays().add(startMarkerAIS[i]);
             }
         }
 
