@@ -295,6 +295,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_ccu));
                 else if(systemInfo.sysName[i].contains("manta"))
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_manta));
+                else if(systemInfo.sysName[i].contains("spot"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.spot_icon));
                 else
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 
@@ -314,6 +316,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_ccu));
                 else if(backSystemInfo.sysName[i].contains("manta"))
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_manta));
+                else if(backSystemInfo.sysName[i].contains("spot"))
+                    startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.spot_icon));
                 else
                     startMarkerRipples[i].setIcon(getResources().getDrawable(R.drawable.ico_unknown));
 

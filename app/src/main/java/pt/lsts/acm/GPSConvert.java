@@ -47,35 +47,39 @@ class GPSConvert {
     }
 
     public String latLonToDM(double latitude, double longitude) {
+
         StringBuilder builder = new StringBuilder();
+        try {
+            if (latitude < 0) {
+                builder.append("Lat: S ");
+            } else {
+                builder.append("Lat: N ");
+            }
 
-        if (latitude < 0) {
-            builder.append("Lat: S ");
-        } else {
-            builder.append("Lat: N ");
+            String latitudeDegrees = Location.convert(Math.abs(latitude), Location.FORMAT_MINUTES);
+            String[] latitudeSplit = latitudeDegrees.split(":");
+            builder.append(latitudeSplit[0]);
+            builder.append("°");
+            builder.append(latitudeSplit[1]);
+            builder.append("\"");
+
+            builder.append("\nLon: ");
+
+            if (longitude < 0) {
+                builder.append("W ");
+            } else {
+                builder.append("E ");
+            }
+
+            String longitudeDegrees = Location.convert(Math.abs(longitude), Location.FORMAT_MINUTES);
+            String[] longitudeSplit = longitudeDegrees.split(":");
+            builder.append(longitudeSplit[0]);
+            builder.append("°");
+            builder.append(longitudeSplit[1]);
+            builder.append("\"");
+        }catch (Exception io){
+            builder.append("Lat: --- \nLon: --- ");
         }
-
-        String latitudeDegrees = Location.convert(Math.abs(latitude), Location.FORMAT_MINUTES);
-        String[] latitudeSplit = latitudeDegrees.split(":");
-        builder.append(latitudeSplit[0]);
-        builder.append("°");
-        builder.append(latitudeSplit[1]);
-        builder.append("\"");
-
-        builder.append("\nLon: ");
-
-        if (longitude < 0) {
-            builder.append("W ");
-        } else {
-            builder.append("E ");
-        }
-
-        String longitudeDegrees = Location.convert(Math.abs(longitude), Location.FORMAT_MINUTES);
-        String[] longitudeSplit = longitudeDegrees.split(":");
-        builder.append(longitudeSplit[0]);
-        builder.append("°");
-        builder.append(longitudeSplit[1]);
-        builder.append("\"");
 
         return builder.toString();
     }
