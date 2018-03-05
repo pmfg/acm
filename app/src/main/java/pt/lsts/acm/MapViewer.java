@@ -238,9 +238,9 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         @SuppressLint("SetTextI18n")
         public void run() {
             customHandlerAIS.postDelayed(this, timeoutAISPull * 1000);
-            if(timeoutAISPull != 1) {
+            /*if(timeoutAISPull != 1) {
                 showError.showErrorLogcat("MEU", "size ais: "+ais.GetNumberShipsAIS());
-            }
+            }*/
             timeoutAISPull = Integer.parseInt(prefs.getString("sync_frequency_ais", "12"));
         }
     };
@@ -333,7 +333,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
                 startMarkerAIS[i].setPosition(systemPosAIS);
                 startMarkerAIS[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
                 startMarkerAIS[i].setIcon(getResources().getDrawable(R.drawable.ship_icon));
-                startMarkerAIS[i].setTitle(ais.getNameShipId(i) + "\nLat: "+ais.getLatitudeShip(i)+ " Lon: "+ ais.getLongitudeShip(i));
+                startMarkerAIS[i].setTitle(ais.getNameShipId(i) + "\nLat: "+ais.getLatitudeShip(i)+ " Lon: "+ ais.getLongitudeShip(i) +
+                        "\n"+ais.parseTime(ais.getLastUpShipId(i))+"\nHeading: "+ais.getHeadingShipId(i)+" | Speed: "+ais.getSpeedShipId(i)+" m/s");
                 map.getOverlays().add(startMarkerAIS[i]);
             }
         }
