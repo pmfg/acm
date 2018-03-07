@@ -27,22 +27,18 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.FirebaseApp;
-
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.ScaleBarOverlay;
 
 import java.util.List;
 
-public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener, MapEventsReceiver {
+public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener, SensorEventListener {
 
     MapView map = null;
     ShowError showError = new ShowError();
@@ -76,8 +72,8 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     Location myLocation;
     GPSConvert gpsConvert = new GPSConvert();
     ScaleBarOverlay scaleBarOverlay;
-    MapEventsOverlay mapEventsOverlay;
     AISPlot ais;
+    private int countAisTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,15 +148,13 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         for(int i = 0; i < 2048; i++)
             startMarkerRipples[i] = new Marker(map);
 
-        startMarkerAIS = new Marker[32000];
-        for(int i = 0; i < 32000; i++)
+        startMarkerAIS = new Marker[10024];
+        for(int i = 0; i < 10024; i++)
             startMarkerAIS[i] = new Marker(map);
 
         scaleBarOverlay = new ScaleBarOverlay(map);
         List<Overlay> overlays = map.getOverlays();
         overlays.add(scaleBarOverlay);
-        mapEventsOverlay = new MapEventsOverlay(this, this);
-        map.getOverlays().add(0, mapEventsOverlay);
     }
 
     public void Preferences() {
@@ -238,9 +232,9 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
         @SuppressLint("SetTextI18n")
         public void run() {
             customHandlerAIS.postDelayed(this, timeoutAISPull * 1000);
-            /*if(timeoutAISPull != 1) {
-                showError.showErrorLogcat("MEU", "size ais: "+ais.GetNumberShipsAIS());
-            }*/
+            //if(timeoutAISPull != 1) {
+            //    showError.showErrorLogcat("MEU", "size ais: "+ais.GetNumberShipsAIS());
+            //}
             timeoutAISPull = Integer.parseInt(prefs.getString("sync_frequency_ais", "12"));
         }
     };
@@ -248,7 +242,7 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
     //Run task periodically - garbage collection
     private Runnable updateTimerThreadGarbagde = new Runnable() {
         public void run() {
-            customHandlerGarbagde.postDelayed(this, 10000);
+            customHandlerGarbagde.postDelayed(this, 20000);
             System.gc();
             Runtime.getRuntime().gc();
         }
@@ -327,20 +321,32 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
             }
         }
 
-        if(ais.GetNumberShipsAIS() > 0) {
-            for (int i = 0; i < ais.GetNumberShipsAIS(); i++) {
-                systemPosAIS.setCoords(ais.getLatitudeShip(i), ais.getLongitudeShip(i));
-                startMarkerAIS[i].setPosition(systemPosAIS);
-                startMarkerAIS[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                startMarkerAIS[i].setIcon(getResources().getDrawable(R.drawable.ship_icon));
-                startMarkerAIS[i].setTitle(ais.getNameShipId(i) + "\nLat: "+ais.getLatitudeShip(i)+ " Lon: "+ ais.getLongitudeShip(i) +
-                        "\n"+ais.parseTime(ais.getLastUpShipId(i))+"\nHeading: "+ais.getHeadingShipId(i)+" | Speed: "+ais.getSpeedShipId(i)+" m/s");
-                map.getOverlays().add(startMarkerAIS[i]);
+        if(countAisTime >= 2) {
+            AISPlot.SystemInfoAIS mAIS = ais.GetDataAIS();
+            if (mAIS.systemSizeAIS > 0) {
+                for (int i = 0; i < mAIS.systemSizeAIS; i++) {
+                    if(((System.currentTimeMillis() / 1000L) - (mAIS.lastUpdateAisShip.get(i)/ 1000L)) < 3600) {
+                        //showError.showErrorLogcat("MEU", mAIS.shipName.get(i) + " | " + (System.currentTimeMillis() / 1000L) + " - " + (mAIS.lastUpdateAisShip.get(i) / 1000L) + " = " + ((System.currentTimeMillis() / 1000L) - (mAIS.lastUpdateAisShip.get(i) / 1000L)));
+                        systemPosAIS.setCoords(mAIS.shipLocation.get(i).getLatitude(), mAIS.shipLocation.get(i).getLongitude());
+                        startMarkerAIS[i].remove(map);
+                        startMarkerAIS[i].setPosition(systemPosAIS);
+                        startMarkerAIS[i].setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                        startMarkerAIS[i].setIcon(getResources().getDrawable(R.drawable.ship_icon));
+                        startMarkerAIS[i].setTitle(mAIS.shipName.get(i) + "\n" + gpsConvert.latLonToDM(mAIS.shipLocation.get(i).getLatitude(), mAIS.shipLocation.get(i).getLongitude()) +
+                                "\n" + ais.parseTime(mAIS.lastUpdateAisShip.get(i)) + "\nHeading: " + mAIS.headingAisShip.get(i) + " | Speed: " + mAIS.speedAisShip.get(i) + " m/s");
+                        map.getOverlays().add(startMarkerAIS[i]);
+                    }
+                }
             }
+            countAisTime = -1;
         }
+        else{
+            for (int i = 0; i < ais.GetNumberShipsAIS(); i++)
+                map.getOverlays().add(startMarkerAIS[i]);
+        }
+        countAisTime++;
 
         drawScaleBar(map);
-        map.getOverlays().add(0, mapEventsOverlay);
         map.invalidate();
     }
 
@@ -439,16 +445,4 @@ public class MapViewer extends AppCompatActivity implements PopupMenu.OnMenuItem
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {}
-
-    @Override
-    public boolean singleTapConfirmedHelper(GeoPoint p) {
-        showError.showErrorLogcat("MEU", "tapped");
-        return true;
-    }
-
-    @Override
-    public boolean longPressHelper(GeoPoint p) {
-        showError.showErrorLogcat("MEU", "LONG");
-        return true;
-    }
 }
