@@ -3,7 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/acm.iml" filepath="$PROJECT_DIR$/acm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/acm-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/acm-app.iml" group="acm/app" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/git-acm.iml" filepath="$PROJECT_DIR$/.idea/modules/git-acm.iml" group="acm" />
     </modules>
   </component>
 </project>
